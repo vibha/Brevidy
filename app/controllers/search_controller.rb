@@ -14,12 +14,12 @@ class SearchController < ApplicationController
     # Only perform the search on Heroku
     if Rails.env.production? || Rails.env.staging?
       if @term.blank?
-        @users = User.search :order => "@random DESC", :page => params[:page], :per_page => 50
+        @users = User.search order: "@random DESC", page: params[:page], per_page: 50
       else
         # Build up search field conditions hash
         @conditions = {}
-        @conditions = searching_for_an_email ? {:email => Riddle.escape(@term)} : {:name => Riddle.escape(@term)}
-        @users = User.search :conditions => @conditions, :order => :name, :page => params[:page], :per_page => 50
+        @conditions = searching_for_an_email ? {email: Riddle.escape(@term)} : {name: Riddle.escape(@term)}
+        @users = User.search conditions: @conditions, order: :name, page: params[:page], per_page: 50
       end
       @results_count = @users.total_entries
     else
@@ -39,28 +39,28 @@ class SearchController < ApplicationController
     searching_for_a_tag = params[:q].blank?
     @term = searching_for_a_tag ? params[:tag] : params[:q]
     @results_count = 0
-    
+
     # Only perform the search on Heroku
     if Rails.env.production? || Rails.env.staging?
       if @term.blank?
         # use the default extended mode matching to return random results
-        @results = Video.search :conditions => {:status => VideoGraph.get_status_number(:ready), :channel_is_private => 'f'},
-                                :order => "@random DESC",
-                                :page => params[:page],
-                                :per_page => 10
+        @results = Video.search conditions: {status: VideoGraph.get_status_number(:ready), channel_is_private: 'f'},
+                                order: "@random DESC",
+                                page: params[:page],
+                                per_page: 10
       else
         if searching_for_a_tag
           # only match video tags using the default extended mode matching
-          @results = Video.search :conditions => {:tags => Riddle.escape(@term), :status => VideoGraph.get_status_number(:ready), :channel_is_private => 'f'},
-                                  :page => params[:page],
-                                  :per_page => 10,
-                                  :order => 'created_at DESC'
+          @results = Video.search conditions: {tags: Riddle.escape(@term), status: VideoGraph.get_status_number(:ready), channel_is_private: 'f'},
+                                  page: params[:page],
+                                  per_page: 10,
+                                  order: 'created_at DESC'
         else
           # use the default extended mode matching to search the video meta
-          @results = Video.search Riddle.escape(@term), :conditions => {:status => VideoGraph.get_status_number(:ready), :channel_is_private => 'f'},
-                                  :page => params[:page],
-                                  :per_page => 10,
-                                  :order => 'created_at DESC'
+          @results = Video.search Riddle.escape(@term), conditions: {status: VideoGraph.get_status_number(:ready), channel_is_private: 'f'},
+                                  page: params[:page],
+                                  per_page: 10,
+                                  order: 'created_at DESC'
         end
       end
       @results_count = @results.total_entries

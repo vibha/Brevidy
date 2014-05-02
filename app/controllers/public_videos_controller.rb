@@ -10,24 +10,24 @@ class PublicVideosController < ApplicationController
       @video ||= Video.where('public_token = ?', params[:public_token].strip.first(11)).first
 
       if @video && @video.is_status?(VideoGraph::READY)
-        render :template => "public_videos/embed",
-               :status => :ok,
-               :layout => "empty"
+        render template: "public_videos/embed",
+               status: :ok,
+               layout: "empty"
 
         # Create an entry for a video being played if it's not a known bot
         # but give it an event_creator_id of 0 so we can distinguish it as an external play
-        UserEvent.create(:event_type => UserEvent.event_type_value(:video_play),
-                         :event_object_id => @video.id,
-                         :user_id => @video.user_id,
-                         :event_creator_id => 0)
+        UserEvent.create(event_type: UserEvent.event_type_value(:video_play),
+                         event_object_id: @video.id,
+                         user_id: @video.user_id,
+                         event_creator_id: 0)
       else
         # show an error page if we couldn't find the video or the
         # video is not yet done uploading/processing/etc
-        render :template => "errors/error_404", :status => 404
+        render template: "errors/error_404", status: 404
       end
     else
       # no public token passed in
-      render :template => "errors/error_404", :status => 404
+      render template: "errors/error_404", status: 404
     end
   end
 
@@ -45,11 +45,11 @@ class PublicVideosController < ApplicationController
       else
         # show an error page if we couldn't find the video or the
         # video is not yet done uploading/processing/etc
-        render :template => "errors/error_404", :status => 404
+        render template: "errors/error_404", status: 404
       end
     else
       # no public token passed in
-      render :template => "errors/error_404", :status => 404
+      render template: "errors/error_404", status: 404
     end
   end
 

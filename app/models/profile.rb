@@ -12,18 +12,18 @@ class Profile < ActiveRecord::Base
 
   # validates these attribute conditions are met
   validates :user_id,
-    :presence => { :message => "No user ID was passed in so a profile couldn't be created." }
-  validates :bio, :length => { :maximum => 140, :message => "can only be a maximum of 140 characters long" }
+    presence: { message: "No user ID was passed in so a profile couldn't be created." }
+  validates :bio, length: { maximum: 140, message: "can only be a maximum of 140 characters long" }
   validates :interests,:favorite_music,:favorite_movies,:favorite_books,:favorite_people,
     :favorite_foods,:things_i_could_live_without,:one_thing_i_would_change_in_the_world,
-    :length => { :maximum => 1000, :message => "can only be a maximum of 1000 characters long" }
+    length: { maximum: 1000, message: "can only be a maximum of 1000 characters long" }
   validates :quotes_to_live_by,
-    :length => { :maximum => 3000, :message => "can only be a maximum of 3000 characters long" }
-  validates :website, :format => { :with => /\A#{URI::regexp(%w(http https))}\z/,
-                                   :message => "^The website you provided is invalid.  Please make sure it starts with 'http://' or 'https://'" },
-                      :length => { :maximum => 250, :message => "can only be a maximum of 250 characters long" },
-                      :allow_nil => true,
-                      :allow_blank => true
+    length: { maximum: 3000, message: "can only be a maximum of 3000 characters long" }
+  validates :website, format: { with: /\A#{URI::regexp(%w(http https))}\z/,
+                                   message: "^The website you provided is invalid.  Please make sure it starts with 'http://' or 'https://'" },
+                      length: { maximum: 250, message: "can only be a maximum of 250 characters long" },
+                      allow_nil: true,
+                      allow_blank: true
 
   # create a hash of profile attributes
   def profile_hash
@@ -34,7 +34,7 @@ class Profile < ActiveRecord::Base
   def categories_to_hash(type)
     profile_hash.inject({}) do |hash, property|
       if type == 'html'
-        hash[property] = simple_format(auto_link(h(self.send(property)), :html => { :target => "_blank" }), {}, :sanitize => false)
+        hash[property] = simple_format(auto_link(h(self.send(property)), html: { target: "_blank" }), {}, sanitize: false)
       else
         hash[property] = self.send(property)
       end

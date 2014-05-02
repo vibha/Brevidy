@@ -4,32 +4,32 @@ class UsersController < ApplicationController
   # needed for truncate method
   include ActionView::Helpers::TextHelper
 
-  before_filter :site_authenticate, :only => [:block, :edit, :edit_banner, :latest_activity, :new_image,
+  before_filter :site_authenticate, only: [:block, :edit, :edit_banner, :latest_activity, :new_image,
                                               :new_image_status, :subscriptions_stream, :unblock, :update,
                                               :update_background_image, :update_banner_from_gallery, :update_notifications,
                                               :update_password]
-  before_filter :redirect_to_stream_if_logged_in, :only => [:create, :forgotten_password, :new, :reset_password, :signup,
+  before_filter :redirect_to_stream_if_logged_in, only: [:create, :forgotten_password, :new, :reset_password, :signup,
                                                             :validate_forgotten_password, :validate_reset_password]
-  before_filter :set_user, :except => [:create, :forgotten_password, :index, :new, :signup, :username_availability, :validate_forgotten_password]
-  before_filter :verify_current_user_is_not_blocked, :only => [:show]
-  before_filter :verify_user_owns_page, :only => [:edit, :edit_banner, :new_image, :new_image_status, :subscriptions_stream,
+  before_filter :set_user, except: [:create, :forgotten_password, :index, :new, :signup, :username_availability, :validate_forgotten_password]
+  before_filter :verify_current_user_is_not_blocked, only: [:show]
+  before_filter :verify_user_owns_page, only: [:edit, :edit_banner, :new_image, :new_image_status, :subscriptions_stream,
                                                   :update, :update_background_image, :update_banner_from_gallery, :update_notifications,
                                                   :update_password]
-  before_filter :set_featured_videos, :only => [:show, :subscriptions_stream]
-  before_filter :verify_tokens_match_and_token_is_fresh, :only => [:reset_password, :validate_reset_password]
+  before_filter :set_featured_videos, only: [:show, :subscriptions_stream]
+  before_filter :verify_tokens_match_and_token_is_fresh, only: [:reset_password, :validate_reset_password]
 
   # Caching
   caches_action :new
 
   # POST /:username/block
   def block
-    blocking = Blocking.where(:requesting_user => current_user.id, :blocked_user => @user.id).first
+    blocking = Blocking.where(requesting_user: current_user.id, blocked_user: @user.id).first
     if blocking
-      render :json => { :error => "You are already blocking that user." },
-             :status => :unprocessable_entity
+      render json: { error: "You are already blocking that user." },
+             status: :unprocessable_entity
     else
       current_user.block!(@user)
-      render :nothing => true, :status => :created
+      render nothing: true, status: :created
     end
   end
 
@@ -47,9 +47,9 @@ class UsersController < ApplicationController
 
       respond_to do |format|
         format.html { redirect_to user_stream_path(current_user) }
-        format.json { render :json => { :success => true,
-                                        :message => nil,
-                                        :user_id => @user.id }, :status => :created }
+        format.json { render json: { success: true,
+                                        message: nil,
+                                        user_id: @user.id }, status: :created }
       end
 
       UserMailer.delay.celebrate_new_user(@user) if Rails.env.production?
@@ -57,9 +57,9 @@ class UsersController < ApplicationController
       # return errors via AJAX
       respond_to do |format|
         format.js
-        format.json { render :json => { :success => false,
-                                        :message => get_errors_for_class(@user).to_sentence,
-                                        :user_id => false }, :status => :unprocessable_entity }
+        format.json { render json: { success: false,
+                                        message: get_errors_for_class(@user).to_sentence,
+                                        user_id: false }, status: :unprocessable_entity }
       end
     end
   end
@@ -73,7 +73,7 @@ class UsersController < ApplicationController
 
   # GET /:username/edit_banner
   def edit_banner
-    @banner_images = BannerImage.where(:active => true)
+    @banner_images = BannerImage.where(active: true)
   end
 
   # GET /account/forgotten_password
@@ -82,7 +82,7 @@ class UsersController < ApplicationController
     @show_password_reset = false
 
     respond_to do |format|
-      format.html { render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/forgotten_password", status: :ok, layout: "signed_out") }
     end
   end
 
@@ -107,15 +107,15 @@ class UsersController < ApplicationController
     cookies[:invitation_token] = params[:invitation_token] if params[:invitation_token]
 
     respond_to do |format|
-      format.html { render(:template => "users/new", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/new", status: :ok, layout: "signed_out") }
     end
   end
 
   # GET /:username/account/image_status
   def new_image_status
     if current_user.image_status == 'processing'
-      render :json => { :job_status => 'processing' },
-             :status => :ok
+      render json: { job_status: 'processing' },
+             status: :ok
     elsif current_user.image_status == 'success'
       # refresh page to show new image
       if params[:media_type] == 'banner'
@@ -125,21 +125,21 @@ class UsersController < ApplicationController
       end
     elsif current_user.image_status == 'error'
       # we had an issue updating the image
-      render :json => { :job_status => 'error' },
-             :status => :ok
+      render json: { job_status: 'error' },
+             status: :ok
     else
       # we had an unknown state
-      render :json => { :job_status => 'error' },
-             :status => :ok
+      render json: { job_status: 'error' },
+             status: :ok
     end
   end
 
   # PUT /:username/account/image
   def new_image
     if params[:filename].blank? || params[:media_type].blank?
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "USER IMAGE: Error SAVING image for #{current_user.email}.  REASON: Filename or media_type (image or banner) was blank.") if Rails.env.production?
-      render :json => { :error => "There was an error saving your new image.  We have been notified of this issue." },
-             :status => :unprocessable_entity
+      Airbrake.notify(error_class: "Logged Error", error_message: "USER IMAGE: Error SAVING image for #{current_user.email}.  REASON: Filename or media_type (image or banner) was blank.") if Rails.env.production?
+      render json: { error: "There was an error saving your new image.  We have been notified of this issue." },
+             status: :unprocessable_entity
     else
       current_user.update_attribute(:image_status, 'processing')
       new_temp_image = params[:filename]
@@ -159,7 +159,7 @@ class UsersController < ApplicationController
         # Also pass in the old image and new temp file so we can clean up after ourselves on S3
         current_user.set_new_user_image(old_image, new_temp_image, false)
       else
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "There was a bad media_type passed in (#{params[:media_type]}) when saving a new image for #{current_user.email}.") if Rails.env.production?
+        Airbrake.notify(error_class: "Logged Error", error_message: "There was a bad media_type passed in (#{params[:media_type]}) when saving a new image for #{current_user.email}.") if Rails.env.production?
         return
       end
 
@@ -168,8 +168,8 @@ class UsersController < ApplicationController
       #
       # we use :start_polling to tell the uploader to only do this
       # for images and not for videos
-      render :json => { :start_polling => 'true' },
-             :status => :ok
+      render json: { start_polling: 'true' },
+             status: :ok
     end
   end
 
@@ -177,7 +177,7 @@ class UsersController < ApplicationController
   def reset_password
     if params[:password] == params[:password_confirmation]
       # New passwords match so reset it
-      @user.update_attributes(:password => params[:password])
+      @user.update_attributes(password: params[:password])
       User.should_encrypt_password = true
       if @user.save
         User.should_encrypt_password = false
@@ -201,7 +201,7 @@ class UsersController < ApplicationController
     end
 
     respond_to do |format|
-      format.html { render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/forgotten_password", status: :ok, layout: "signed_out") }
     end
   end
 
@@ -212,10 +212,10 @@ class UsersController < ApplicationController
 
     if current_user.blank? || !current_user?(@user)
       # Only show public videos that are complete
-      @videos ||= @user.public_videos.paginate(:page => params[:page], :per_page => 10, :order => 'created_at DESC')
+      @videos ||= @user.public_videos.paginate(page: params[:page], per_page: 10, order: 'created_at DESC')
     else
       # Show all videos (public and private) except ones that are uploading
-      @videos ||= @user.all_videos.paginate(:page => params[:page], :per_page => 10, :order => 'created_at DESC')
+      @videos ||= @user.all_videos.paginate(page: params[:page], per_page: 10, order: 'created_at DESC')
     end
 
     respond_to do |format|
@@ -230,7 +230,7 @@ class UsersController < ApplicationController
     @invitation ||= InvitationLink.handle_invite_token(params[:invitation_token])
 
     respond_to do |format|
-      format.html { render(:template => "users/signup", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/signup", status: :ok, layout: "signed_out") }
     end
   end
 
@@ -238,7 +238,7 @@ class UsersController < ApplicationController
   # GET /:username/stream.js
   def subscriptions_stream
     @browser_title ||= @user.name
-    @videos ||= current_user.all_videos_for_subscriptions.paginate(:page => params[:page], :per_page => 10, :order => 'created_at DESC')
+    @videos ||= current_user.all_videos_for_subscriptions.paginate(page: params[:page], per_page: 10, order: 'created_at DESC')
 
     respond_to do |format|
       params[:page].to_i > 1 ? format.js : format.html
@@ -247,18 +247,18 @@ class UsersController < ApplicationController
 
   # POST /:username/unblock
   def unblock
-    blocking = Blocking.where(:requesting_user => current_user.id, :blocked_user => @user.id).first
+    blocking = Blocking.where(requesting_user: current_user.id, blocked_user: @user.id).first
     if blocking
       if blocking.destroy
-        render :nothing => true, :status => :ok
+        render nothing: true, status: :ok
       else
-        render :json => { :error => "There was an issue unblocking that person.  We have been notified of this issue." },
-               :status => :not_found
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "UNBLOCK: User (#{current_user.email}) was unable to unblock another user (#{@user.email})") if Rails.env.production?
+        render json: { error: "There was an issue unblocking that person.  We have been notified of this issue." },
+               status: :not_found
+        Airbrake.notify(error_class: "Logged Error", error_message: "UNBLOCK: User (#{current_user.email}) was unable to unblock another user (#{@user.email})") if Rails.env.production?
       end
     else
-      render :json => { :error => "You are not currently blocking that user." },
-             :status => :unprocessable_entity
+      render json: { error: "You are not currently blocking that user." },
+             status: :unprocessable_entity
     end
   end
 
@@ -270,16 +270,16 @@ class UsersController < ApplicationController
     old_username = current_user.username
 
     # update the other attributes
-    if current_user.update_attributes(params[:user]) && current_user.update_attributes(:birthday => new_birthday)
+    if current_user.update_attributes(params[:user]) && current_user.update_attributes(birthday: new_birthday)
       if current_user.username != old_username
         current_user.update_attribute(:username_changed_at, DateTime.now)
         redirect_to user_account_path(current_user)
       else
-        render :nothing => true, :status => :accepted
+        render nothing: true, status: :accepted
       end
     else
-      render :json => { :error => get_errors_for_class(current_user).to_sentence },
-             :status => :unprocessable_entity
+      render json: { error: get_errors_for_class(current_user).to_sentence },
+             status: :unprocessable_entity
     end
   end
 
@@ -287,18 +287,18 @@ class UsersController < ApplicationController
   def update_background_image
     background_image_id = params[:background_image_id]
     if background_image_id.blank?
-      render :json => { :error => "Sorry, but we could not set your background image for you." },
-             :status => :unprocessable_entity
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "USER BACKGROUND: Could not set a background image since the background_image_id passed in was blank.") if Rails.env.production?
+      render json: { error: "Sorry, but we could not set your background image for you." },
+             status: :unprocessable_entity
+      Airbrake.notify(error_class: "Logged Error", error_message: "USER BACKGROUND: Could not set a background image since the background_image_id passed in was blank.") if Rails.env.production?
     else
       # Make sure a valid ID was passed in
-      if current_user.update_attributes(:background_image_id => background_image_id.to_i)
-        render :json => { :background_image_id => background_image_id },
-               :status => :accepted
+      if current_user.update_attributes(background_image_id: background_image_id.to_i)
+        render json: { background_image_id: background_image_id },
+               status: :accepted
       else
-        render :json => { :error => "Sorry, but we could not set your background image for you." },
-               :status => :unprocessable_entity
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "USER BACKGROUND: Could not set a background image since the background_image_id passed in was invalid.") if Rails.env.production?
+        render json: { error: "Sorry, but we could not set your background image for you." },
+               status: :unprocessable_entity
+        Airbrake.notify(error_class: "Logged Error", error_message: "USER BACKGROUND: Could not set a background image since the background_image_id passed in was invalid.") if Rails.env.production?
       end
     end
   end
@@ -307,19 +307,19 @@ class UsersController < ApplicationController
   def update_banner_from_gallery
     banner_id = params[:banner_image_id]
     if banner_id.blank?
-      render :json => { :error => "Sorry, but we could not set your banner image for you." },
-             :status => :unprocessable_entity
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "USER BANNER: Could not set a user banner from the gallery since the banner ID passed in was blank.") if Rails.env.production?
+      render json: { error: "Sorry, but we could not set your banner image for you." },
+             status: :unprocessable_entity
+      Airbrake.notify(error_class: "Logged Error", error_message: "USER BANNER: Could not set a user banner from the gallery since the banner ID passed in was blank.") if Rails.env.production?
     else
       # Make sure a valid ID was passed in
-      if BannerImage.where(:id => banner_id, :active => true).exists?
-        current_user.update_attributes(:banner_image_id => banner_id)
-        render :json => { :image_path => current_user.get_banner_image_url(banner_id) },
-               :status => :accepted
+      if BannerImage.where(id: banner_id, active: true).exists?
+        current_user.update_attributes(banner_image_id: banner_id)
+        render json: { image_path: current_user.get_banner_image_url(banner_id) },
+               status: :accepted
       else
-        render :json => { :error => "Sorry, but we could not set your banner image for you." },
-               :status => :unprocessable_entity
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "USER BANNER: Could not set a user banner from the gallery since the banner ID passed in was invalid or for a banner that is no longer active.") if Rails.env.production?
+        render json: { error: "Sorry, but we could not set your banner image for you." },
+               status: :unprocessable_entity
+        Airbrake.notify(error_class: "Logged Error", error_message: "USER BANNER: Could not set a user banner from the gallery since the banner ID passed in was invalid or for a banner that is no longer active.") if Rails.env.production?
       end
     end
   end
@@ -328,11 +328,11 @@ class UsersController < ApplicationController
   def update_notifications
     the_settings = current_user.setting
     if the_settings.update_attributes(params[:user])
-      render :nothing => true,
-             :status => :accepted
+      render nothing: true,
+             status: :accepted
     else
-      render :json => { :error => get_errors_for_class(the_settings).to_sentence },
-             :status => :unprocessable_entity
+      render json: { error: get_errors_for_class(the_settings).to_sentence },
+             status: :unprocessable_entity
     end
   end
 
@@ -344,36 +344,36 @@ class UsersController < ApplicationController
       confirm_new_password ||= params[:confirm_new_password].strip
       if new_password == confirm_new_password
         User.should_encrypt_password = true
-        if current_user.update_attributes(:password => new_password)
-          render :nothing => true, :status => :accepted
+        if current_user.update_attributes(password: new_password)
+          render nothing: true, status: :accepted
         else
-          render :json => { :error => get_errors_for_class(current_user).to_sentence },
-                 :status => :unprocessable_entity
+          render json: { error: get_errors_for_class(current_user).to_sentence },
+                 status: :unprocessable_entity
         end
         User.should_encrypt_password = false
       else
-        render :json => { :error => "Your new password does not match the confirmation password.  Please re-type them." }, 
-               :status => :unprocessable_entity
+        render json: { error: "Your new password does not match the confirmation password.  Please re-type them." },
+               status: :unprocessable_entity
       end
     else
-      render :json => { :error => "Your old password does not match the password we have on record." },
-             :status => :unprocessable_entity
+      render json: { error: "Your old password does not match the password we have on record." },
+             status: :unprocessable_entity
     end
   end
 
   # GET /username_availability
   def username_availability
     if params[:username].blank?
-      render :json => { :error => "No username was passed in." },
-             :status => :unprocessable_entity
+      render json: { error: "No username was passed in." },
+             status: :unprocessable_entity
     else
       username = params[:username].downcase.strip
-      if (username.length > User::USERNAME_LENGTH) || !User::USERNAME_REGEX.match(username) || !User.verify_username_is_acceptable(username) || User.where(:username => username).exists?
-        render :json => { :availability_text => "not available" },
-               :status => :ok
+      if (username.length > User::USERNAME_LENGTH) || !User::USERNAME_REGEX.match(username) || !User.verify_username_is_acceptable(username) || User.where(username: username).exists?
+        render json: { availability_text: "not available" },
+               status: :ok
       else
-        render :json => { :availability_text => "available" },
-               :status => :ok
+        render json: { availability_text: "available" },
+               status: :ok
       end
     end
   end
@@ -396,13 +396,13 @@ class UsersController < ApplicationController
 
         if forgetful_user.save
           # Send email
-          UserMailer.delay(:priority => 0).reset_password_instructions(forgetful_user)
+          UserMailer.delay(priority: 0).reset_password_instructions(forgetful_user)
 
           # Show flash message
           flash.now[:success] = "We have sent password reset instructions to that email address."
         else
           flash.now[:error] = "There was an error processing your password reset request.  We have been notified of this issue."
-          Airbrake.notify(:error_class => "Logged Error", :error_message => "Could not save reset_token (#{forgetful_user.reset_token}) for User (#{forgetful_user.email}).") if Rails.env.production?
+          Airbrake.notify(error_class: "Logged Error", error_message: "Could not save reset_token (#{forgetful_user.reset_token}) for User (#{forgetful_user.email}).") if Rails.env.production?
         end
       else
         flash.now[:error] = "We could not find a user with that email address."
@@ -410,7 +410,7 @@ class UsersController < ApplicationController
     end
 
     respond_to do |format|
-      format.html { render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/forgotten_password", status: :ok, layout: "signed_out") }
     end
   end
 
@@ -420,7 +420,7 @@ class UsersController < ApplicationController
     @show_password_reset = true
 
     respond_to do |format|
-      format.html { render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out") }
+      format.html { render(template: "users/forgotten_password", status: :ok, layout: "signed_out") }
     end
   end
 
@@ -435,7 +435,7 @@ class UsersController < ApplicationController
       if @token.blank?
         @show_password_reset = false
         flash.now[:error] = invalid_token_msg
-        render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out") and return
+        render(template: "users/forgotten_password", status: :ok, layout: "signed_out") and return
       end
 
       # See if the token is older than 2 days (it's expired if so)
@@ -453,7 +453,7 @@ class UsersController < ApplicationController
         # Show a flash message and render the page
         @show_password_reset = false
         flash.now[:error] = invalid_token_msg
-        render(:template => "users/forgotten_password", :status => :ok, :layout => "signed_out")
+        render(template: "users/forgotten_password", status: :ok, layout: "signed_out")
       end
     end
 
@@ -467,7 +467,7 @@ class UsersController < ApplicationController
     def generate_reset_token
       loop do
         token = SecureRandom.base64(32).tr('+/=', 'xyz')
-        break token unless User.where(:reset_token => token).exists?
+        break token unless User.where(reset_token: token).exists?
       end
     end
 

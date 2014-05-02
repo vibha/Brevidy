@@ -8,7 +8,7 @@ module UploadsHelper
       when 'banner', 'image'
         temporary_filename = filename_for_image_upload
         success_response_path = user_account_image_path(current_user)
-        image_status_path = user_account_image_status_path(current_user, :media_type => media_type)
+        image_status_path = user_account_image_status_path(current_user, media_type: media_type)
         s3_storage_folder = "#{Brevidy::Application::S3_IMAGES_RELATIVE_PATH}/#{current_user.id}"
         acl = 'public-read'
         content_type = 'image/jpg'
@@ -40,13 +40,13 @@ module UploadsHelper
     signature = generated_signature(policy)
 
     # Return the javascript given all of the above
-    return uploader_javascript(:media_type => media_type, :max_filesize => max_filesize, :acl => acl,
-                               :s3_file_key => s3_file_key, :policy => policy, :signature => signature,
-                               :s3_base_url => s3_base_url, :content_type => content_type,
-                               :filter_title => filter_title, :filter_extensions => filter_extensions,
-                               :temporary_filename => temporary_filename, :base_filename => base_filename,
-                               :success_response_path => success_response_path, :image_status_path => image_status_path,
-                               :video_upload_error_path => video_upload_error_path)
+    return uploader_javascript(media_type: media_type, max_filesize: max_filesize, acl: acl,
+                               s3_file_key: s3_file_key, policy: policy, signature: signature,
+                               s3_base_url: s3_base_url, content_type: content_type,
+                               filter_title: filter_title, filter_extensions: filter_extensions,
+                               temporary_filename: temporary_filename, base_filename: base_filename,
+                               success_response_path: success_response_path, image_status_path: image_status_path,
+                               video_upload_error_path: video_upload_error_path)
   end
 
   private

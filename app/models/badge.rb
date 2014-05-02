@@ -3,9 +3,9 @@ class Badge < ActiveRecord::Base
   attr_accessible :badge_type
 
   # validates these attribute conditions are met
-  validates :video_id,    :presence => { :message => "^There was no video ID passed in" }
-  validates :badge_type,    :presence => { :message => "^There was no badge type passed in" }
-  validates :badge_from,  :presence => { :message => "^There was no person passed in for who the badge is from" }
+  validates :video_id,    presence: { message: "^There was no video ID passed in" }
+  validates :badge_type,    presence: { message: "^There was no badge type passed in" }
+  validates :badge_from,  presence: { message: "^There was no person passed in for who the badge is from" }
 
   # Active Record relationships
   belongs_to :video
@@ -28,7 +28,7 @@ class Badge < ActiveRecord::Base
   class << self
     # returns how many badges and of what type a user has that are viewable by current user
     def badges_count_for_type(badge_type)
-      Badge.where(:badge_type => badge_type).count
+      Badge.where(badge_type: badge_type).count
     end
   end
 

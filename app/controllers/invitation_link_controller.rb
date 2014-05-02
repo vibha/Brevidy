@@ -19,18 +19,18 @@ class InvitationLinkController < ApplicationController
   def create
     recipient_emails = params[:recipient_email]
     if recipient_emails.blank?
-      render :json => { :error => "You have not specified any email addresses to invite." },
-             :status => :unprocessable_entity
+      render json: { error: "You have not specified any email addresses to invite." },
+             status: :unprocessable_entity
     else
       personal_message = params[:personal_message]
       invitation_validation_errors = InvitationLink.invite_new_users!(recipient_emails, current_user, personal_message)
       if invitation_validation_errors.blank?
-        render :json => { :message => "Thank you!  We have sent an email inviting each person!" },
-               :status => :ok
+        render json: { message: "Thank you!  We have sent an email inviting each person!" },
+               status: :ok
       else
         # return the errors
-        render :json => { :error => invitation_validation_errors },
-               :status => :unprocessable_entity
+        render json: { error: invitation_validation_errors },
+               status: :unprocessable_entity
       end
     end
   end

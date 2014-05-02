@@ -2,9 +2,9 @@ class SocialNetwork < ActiveRecord::Base
 
   belongs_to :user
 
-  validates :user_id, :uid, :provider, :presence => { :message => "^We were unable to retrieve your social graph data." }
-  validates :provider, :inclusion => { :in => ["facebook", "twitter"] }
-  validate :uid_and_provider_are_unique, :on => :create
+  validates :user_id, :uid, :provider, presence: { message: "^We were unable to retrieve your social graph data." }
+  validates :provider, inclusion: { in: ["facebook", "twitter"] }
+  validate :uid_and_provider_are_unique, on: :create
 
   class << self
     # decodes Base64 URL encoded strings
@@ -17,7 +17,7 @@ class SocialNetwork < ActiveRecord::Base
   private
     # custom validations
     def uid_and_provider_are_unique
-      errors.add(:uid, "^There is already a Brevidy account associated with these #{provider.capitalize} credentials.") if SocialNetwork.where(:uid => uid, :provider => provider).exists?
+      errors.add(:uid, "^There is already a Brevidy account associated with these #{provider.capitalize} credentials.") if SocialNetwork.where(uid: uid, provider: provider).exists?
     end
 
 end

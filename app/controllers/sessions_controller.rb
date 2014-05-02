@@ -1,6 +1,6 @@
 class SessionsController < ApplicationController
   skip_before_filter :site_authenticate
-  skip_before_filter :ensure_the_user_is_not_deactivated, :only => [:destroy]
+  skip_before_filter :ensure_the_user_is_not_deactivated, only: [:destroy]
 
   def new
     if signed_in?
@@ -8,7 +8,7 @@ class SessionsController < ApplicationController
     else
       @browser_title = "Login"
       respond_to do |format|
-        format.html { render(:template => "sessions/new", :status => :ok, :layout => "signed_out") }
+        format.html { render(template: "sessions/new", status: :ok, layout: "signed_out") }
       end
     end
   end
@@ -19,22 +19,22 @@ class SessionsController < ApplicationController
     if social_params
       if signed_in?
         # user is associating their FB / Twitter account with their Brevidy account
-        new_network ||= current_user.social_networks.new(:provider => social_params["provider"], :uid => social_params["uid"], :token => social_params["credentials"]["token"], :token_secret => social_params["credentials"]["secret"])
+        new_network ||= current_user.social_networks.new(provider: social_params["provider"], uid: social_params["uid"], token: social_params["credentials"]["token"], token_secret: social_params["credentials"]["secret"])
 
         respond_to do |format|
           if new_network.save
             format.html { redirect_to user_account_path(current_user) }
-            format.json { render :json => { :success => true,
-                                            :message => nil,
-                                            :user_id => current_user.id },
-                                 :status => :created }
+            format.json { render json: { success: true,
+                                            message: nil,
+                                            user_id: current_user.id },
+                                 status: :created }
           else
             error_message ||= get_errors_for_class(new_network).to_sentence
             format.html { flash[:error] = error_message; redirect_to user_account_path(current_user) }
-            format.json { render :json => { :success => false,
-                                            :message => error_message,
-                                            :user_id => current_user.id },
-                                 :status => :unprocessable_entity }
+            format.json { render json: { success: false,
+                                            message: error_message,
+                                            user_id: current_user.id },
+                                 status: :unprocessable_entity }
           end
         end
       else
@@ -60,15 +60,15 @@ class SessionsController < ApplicationController
           end
 
           respond_to do |format|
-            format.html { render(:template => "users/signup",
-                                 :status => :ok,
-                                 :layout => "signed_out",
-                                 :locals => { :user => @user,
-                                              :provider => social_params["provider"],
-                                              :uid => social_params["uid"],
-                                              :oauth_token => social_params["credentials"]["token"],
-                                              :oauth_token_secret => social_params["credentials"]["secret"],
-                                              :social_signup => "true" }) }
+            format.html { render(template: "users/signup",
+                                 status: :ok,
+                                 layout: "signed_out",
+                                 locals: { user: @user,
+                                              provider: social_params["provider"],
+                                              uid: social_params["uid"],
+                                              oauth_token: social_params["credentials"]["token"],
+                                              oauth_token_secret: social_params["credentials"]["secret"],
+                                              social_signup: "true" }) }
           end
         else
           # user already exists with that UID/provider combo, so they just want to login
@@ -82,10 +82,10 @@ class SessionsController < ApplicationController
       respond_to do |format|
         error_message = "There was an error communicating with Facebook or Twitter. Please try again in a few minutes!"
         format.html { flash[:error] = error_message; redirect_to :login }
-        format.json { render :json => { :success => false,
-                                        :message => error_message,
-                                        :user_id => false },
-                             :status => :unauthorized }
+        format.json { render json: { success: false,
+                                        message: error_message,
+                                        user_id: false },
+                             status: :unauthorized }
       end
     end # end check for social params
   end
@@ -102,19 +102,19 @@ class SessionsController < ApplicationController
       respond_to do |format|
         error_message = "Invalid login credentials."
         format.html { flash[:error] = error_message; redirect_to :login }
-        format.json { render :json => { :success => false,
-                                        :message => error_message,
-                                        :user_id => false },
-                             :status => :unauthorized }
+        format.json { render json: { success: false,
+                                        message: error_message,
+                                        user_id: false },
+                             status: :unauthorized }
       end
     else
       sign_in user
       respond_to do |format|
         format.html { redirect_back_or user_stream_path(current_user) }
-        format.json { render :json => { :success => true,
-                                        :message => nil,
-                                        :user_id => user.id },
-                             :status => :created }
+        format.json { render json: { success: true,
+                                        message: nil,
+                                        user_id: user.id },
+                             status: :created }
       end
     end
   end

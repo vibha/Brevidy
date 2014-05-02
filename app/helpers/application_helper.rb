@@ -16,7 +16,7 @@ module ApplicationHelper
   def sort_badges_by_count_for_user(badges, the_user)
     sorted_badges = Array.new
     badges.each do |badge|
-      sorted_badges << {:name => badge.name, :css_class => badge.css_class, :count => the_user.badges_count_for_type(badge.id)}
+      sorted_badges << {name: badge.name, css_class: badge.css_class, count: the_user.badges_count_for_type(badge.id)}
     end
     return sorted_badges.sort_by{|bdgs| bdgs[:count]}.reverse
   end
@@ -41,7 +41,7 @@ module ApplicationHelper
 
   # Returns a badge object owned by current user for a given badge type and associated video
   def find_badge_for_video(badge_type, video)
-    video.badges.where(:badge_from => current_user, :badge_type => badge_type).first
+    video.badges.where(badge_from: current_user, badge_type: badge_type).first
   end
 
   # Returns a video object given a video ID

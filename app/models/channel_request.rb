@@ -3,9 +3,9 @@ require 'securerandom'
 class ChannelRequest < ActiveRecord::Base
   attr_protected :channel_id, :user_id, :ignored, :token
 
-  before_validation :generate_token, :on => :create
-  validates :channel_id, :user_id, :token, :presence => true
-  validates_uniqueness_of :channel_id, :scope => [:user_id]
+  before_validation :generate_token, on: :create
+  validates :channel_id, :user_id, :token, presence: true
+  validates_uniqueness_of :channel_id, scope: [:user_id]
   validate :request_is_not_from_channel_owner
 
   belongs_to :user
@@ -22,7 +22,7 @@ class ChannelRequest < ActiveRecord::Base
     def generate_token
       loop do
         security_token = SecureRandom.base64(50).tr('+/=', 'xyz').first(50)
-        break self.token = security_token unless ChannelRequest.where(:token => security_token).exists?
+        break self.token = security_token unless ChannelRequest.where(token: security_token).exists?
       end
     end
 end

@@ -1,7 +1,7 @@
 class BannedUser < ActiveRecord::Base
-  validates :email,            :presence => true
-  validates :reason,           :presence => true
-  validates :detailed_reason,  :presence => true
+  validates :email,            presence: true
+  validates :reason,           presence: true
+  validates :detailed_reason,  presence: true
 end
 
 

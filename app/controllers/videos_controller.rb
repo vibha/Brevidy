@@ -1,17 +1,17 @@
 class VideosController < ApplicationController
   include ApplicationHelper
 
-  skip_before_filter :http_authenticate, :verify_authenticity_token, :only => [:encoder_callback]
-  skip_before_filter :site_authenticate, :only => [:embed_code, :encoder_callback, :explore, :flag, :flag_video_dialog, :share_via_email, :show]
-  before_filter :set_user, :except => [:explore]
-  before_filter :verify_current_user_is_not_blocked, :only => [:add_to_channel, :add_to_channel_dialog, :flag, :flag_video_dialog]
-  before_filter :set_video_based_on_user, :only => [:destroy, :edit, :embed_code, :flag, :flag_video_dialog, :share_via_email, :show]
-  before_filter :verify_user_can_access_channel, :only => [:share_via_email, :show]
-  before_filter :verify_user_can_access_channel_or_video, :only => [:embed_code]
-  before_filter :verify_user_owns_video, :only => [:destroy, :edit]
-  before_filter :set_featured_videos, :only => [:show]
+  skip_before_filter :http_authenticate, :verify_authenticity_token, only: [:encoder_callback]
+  skip_before_filter :site_authenticate, only: [:embed_code, :encoder_callback, :explore, :flag, :flag_video_dialog, :share_via_email, :show]
+  before_filter :set_user, except: [:explore]
+  before_filter :verify_current_user_is_not_blocked, only: [:add_to_channel, :add_to_channel_dialog, :flag, :flag_video_dialog]
+  before_filter :set_video_based_on_user, only: [:destroy, :edit, :embed_code, :flag, :flag_video_dialog, :share_via_email, :show]
+  before_filter :verify_user_can_access_channel, only: [:share_via_email, :show]
+  before_filter :verify_user_can_access_channel_or_video, only: [:embed_code]
+  before_filter :verify_user_owns_video, only: [:destroy, :edit]
+  before_filter :set_featured_videos, only: [:show]
 
-  respond_to :js, :only => [:add_to_channel_dialog]
+  respond_to :js, only: [:add_to_channel_dialog]
 
   # POST /:username/add_to_channel
   # Access control is handled in the "add_video_to_channel!" method
@@ -23,29 +23,29 @@ class VideosController < ApplicationController
                                                      params[:channel_is_private])
 
     if new_shared_video.errors.any?
-      render :json => { :error => get_errors_for_class(new_shared_video).to_sentence },
-             :status => :unprocessable_entity
+      render json: { error: get_errors_for_class(new_shared_video).to_sentence },
+             status: :unprocessable_entity
     else
-      render :nothing => true, :status => :created
+      render nothing: true, status: :created
     end
   end
 
   # GET /:username/add_to_channel/dialog
   # Access control is handled within this method
   def add_to_channel_dialog
-    @video ||= Video.where(:id => params[:video_id]).joins(:video_graph).where(:video_graphs => { :status => VideoGraph.get_status_number(:ready) }).first
-    render :json => { :error => "That video could not be found." }, :status => :not_found and return if @video.blank?
+    @video ||= Video.where(id: params[:video_id]).joins(:video_graph).where(video_graphs: { status: VideoGraph.get_status_number(:ready) }).first
+    render json: { error: "That video could not be found." }, status: :not_found and return if @video.blank?
 
     if @video.channel.private? && !current_user_owns?(@video)
-      render :json => { :error => "This video is in a private channel so it cannot be shared." },
-             :status => :unprocessable_entity
+      render json: { error: "This video is in a private channel so it cannot be shared." },
+             status: :unprocessable_entity
     else
       @user ||= get_object_owner(@video)
       if user_can_access_channel
         respond_with(@user, @video)
       else
-        render :json => { :error => "You do not have permission to share this video." },
-               :status => :unauthorized
+        render json: { error: "You do not have permission to share this video." },
+               status: :unauthorized
       end
     end
   end
@@ -53,10 +53,10 @@ class VideosController < ApplicationController
   # DELETE /:username/videos/:id
   def destroy
     if @video.destroy
-      render :nothing => true, :status => :ok
+      render nothing: true, status: :ok
     else
-      render :json => { :error => get_errors_for_class(@video).to_sentence },
-             :status => :unprocessable_entity
+      render json: { error: get_errors_for_class(@video).to_sentence },
+             status: :unprocessable_entity
     end
   end
 
@@ -67,16 +67,16 @@ class VideosController < ApplicationController
 
   # GET /:username/videos/:video_id/embed_code
   def embed_code
-    render :json => { :html => render_to_string( :partial => 'videos/embed_code.html',
-                                                 :locals => { :video => @video } )
+    render json: { html: render_to_string( partial: 'videos/embed_code.html',
+                                                 locals: { video: @video } )
                     },
-           :status => :ok
+           status: :ok
 
     # Create an entry for a video being played
-    UserEvent.create(:event_type => UserEvent.event_type_value(:video_play),
-                     :event_object_id => @video.id,
-                     :user_id => @video.user_id,
-                     :event_creator_id => current_user.blank? ? 0 : current_user.id)
+    UserEvent.create(event_type: UserEvent.event_type_value(:video_play),
+                     event_object_id: @video.id,
+                     user_id: @video.user_id,
+                     event_creator_id: current_user.blank? ? 0 : current_user.id)
   end
 
   # POST /:username/videos/:id/encoder_callback
@@ -116,23 +116,23 @@ class VideosController < ApplicationController
             @video.video_graph.handle_transcoding_error(params)
           end
 
-          render :text => "Video encoding status received.",
-                 :status => :ok
+          render text: "Video encoding status received.",
+                 status: :ok
         else
           # Don't modify the state, tell Zencoder we got this, and log an error so we can investigate
-          render :text => "Error: Video in unexpected state.",
-                 :status => :ok
-          Airbrake.notify(:error_class => "Logged Error", :error_message => "ERROR: Callback received on file in incorrect state. Expected state: Transcoding. State: #{@video.status}") if Rails.env.production?
+          render text: "Error: Video in unexpected state.",
+                 status: :ok
+          Airbrake.notify(error_class: "Logged Error", error_message: "ERROR: Callback received on file in incorrect state. Expected state: Transcoding. State: #{@video.status}") if Rails.env.production?
         end
       else
         # Don't modify the state and return a malformed request error to Zencoder
-        render :text => "Error: Malformed callback.",
-               :status => :bad_request
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "ERROR: Callback received with malformed parameters.  Params: #{params}") if Rails.env.production?
+        render text: "Error: Malformed callback.",
+               status: :bad_request
+        Airbrake.notify(error_class: "Logged Error", error_message: "ERROR: Callback received with malformed parameters.  Params: #{params}") if Rails.env.production?
       end
     else
-      render :text => "Error: Video not found (it might have been deleted).",
-             :status => :not_found
+      render text: "Error: Video not found (it might have been deleted).",
+             status: :not_found
     end
 =begin
     # Sample success response from zencoder
@@ -154,8 +154,8 @@ class VideosController < ApplicationController
     @latest_featured_videos = []
 
     # only show most recent public videos that have a :ready state
-    @videos ||= Video.joins(:channel).where(:channels => { :private => false }).joins(:video_graph).where(:video_graphs => { :status => VideoGraph.get_status_number(:ready) }).
-                      paginate(:page => params[:page], :per_page => 10, :order => 'created_at DESC')
+    @videos ||= Video.joins(:channel).where(channels: { private: false }).joins(:video_graph).where(video_graphs: { status: VideoGraph.get_status_number(:ready) }).
+                      paginate(page: params[:page], per_page: 10, order: 'created_at DESC')
 
     respond_to do |format|
       params[:page].to_i > 1 ? format.js : format.html
@@ -167,47 +167,47 @@ class VideosController < ApplicationController
     flag_id = params[:flag_id]
     detailed_reason = params[:detailed_reason]
 
-    if flag_id && Flag.where(:id => flag_id).exists?
+    if flag_id && Flag.where(id: flag_id).exists?
 
       if signed_in?
         # Check if the currently signed in user has already flagged this video for this reason
-        if VideoFlag.where(:flagged_by => current_user.id, :video_id => @video.id, :flag_id => flag_id).exists?
-          render :json => { :error => "You have already flagged this video for this reason.  Thank you for your patience while we look into the issue for you." },
-                 :status => :unprocessable_entity and return
+        if VideoFlag.where(flagged_by: current_user.id, video_id: @video.id, flag_id: flag_id).exists?
+          render json: { error: "You have already flagged this video for this reason.  Thank you for your patience while we look into the issue for you." },
+                 status: :unprocessable_entity and return
         end
       else
         # Check if a cookie exists that says they have already flagged this video for this reason
         unless session[:flagged_video].blank?
           if session[:flagged_video][:video_id] == @video.id && session[:flagged_video][:flag_id] == flag_id
-            render :json => { :error => "You have already flagged this video for this reason.  Thank you for your patience while we look into the issue for you." },
-                   :status => :unprocessable_entity and return
+            render json: { error: "You have already flagged this video for this reason.  Thank you for your patience while we look into the issue for you." },
+                   status: :unprocessable_entity and return
           end
         end
       end
 
       # Video has not been flagged by the current user or the signed out user, so let's flag it
-      new_flagging = VideoFlag.new(:flag_id => flag_id,
-                                   :detailed_reason => detailed_reason)
+      new_flagging = VideoFlag.new(flag_id: flag_id,
+                                   detailed_reason: detailed_reason)
       new_flagging.video_id = @video.id
       new_flagging.flagged_by = signed_in? ? current_user.id : nil
       if new_flagging.save
-        render :nothing => true,
-               :status => :created
+        render nothing: true,
+               status: :created
 
         # Send an email to support@brevidy.com
-        UserMailer.delay(:priority => 40).flagged_video(new_flagging, current_user)
+        UserMailer.delay(priority: 40).flagged_video(new_flagging, current_user)
 
         # Save a cookie about this event
-        session[:flagged_video] = { :video_id => @video.id, :flag_id => flag_id }
+        session[:flagged_video] = { video_id: @video.id, flag_id: flag_id }
       else
-        render :json => { :error => get_errors_for_class(new_flagging).to_sentence },
-               :status => :unprocessable_entity
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "FLAGGING: We were unable to flag a video for User (#{current_user.email unless current_user.blank?}), Video (#{video_id}), Flag Type (#{flag_id}), and Detailed Reason #{detailed_reason})") if Rails.env.production?
+        render json: { error: get_errors_for_class(new_flagging).to_sentence },
+               status: :unprocessable_entity
+        Airbrake.notify(error_class: "Logged Error", error_message: "FLAGGING: We were unable to flag a video for User (#{current_user.email unless current_user.blank?}), Video (#{video_id}), Flag Type (#{flag_id}), and Detailed Reason #{detailed_reason})") if Rails.env.production?
       end
 
     else
-      render :json => { :error => "You must select one of the given options for why you want to flag the video!" },
-           :status => :unprocessable_entity
+      render json: { error: "You must select one of the given options for why you want to flag the video!" },
+           status: :unprocessable_entity
     end
   end
 
@@ -231,12 +231,12 @@ class VideosController < ApplicationController
     # and break some conventions along the way
     begin
       @new_video_graph_object ||= current_user.video_graphs.create
-      @video ||= current_user.videos.new(:title => "Yayyy a new video!!!")
+      @video ||= current_user.videos.new(title: "Yayyy a new video!!!")
       @video.video_graph_id = @new_video_graph_object.id
       @video.channel_id = current_user.channels.first.id
       @video.save
     rescue
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "ERROR CREATING VIDEO UPLOAD OBJECTS: We could not create the new video and video_graph objects for this user: #{current_user.email}") if Rails.env.production?
+      Airbrake.notify(error_class: "Logged Error", error_message: "ERROR CREATING VIDEO UPLOAD OBJECTS: We could not create the new video and video_graph objects for this user: #{current_user.email}") if Rails.env.production?
       @error_creating_video_object = true
     end
 
@@ -257,8 +257,8 @@ class VideosController < ApplicationController
                                                     params[:channel_is_private])
 
     if new_shared_video.errors.any?
-      render :json => { :error => get_errors_for_class(new_shared_video).to_sentence },
-             :status => :unprocessable_entity
+      render json: { error: get_errors_for_class(new_shared_video).to_sentence },
+             status: :unprocessable_entity
     else
       redirect_to current_user
     end
@@ -274,20 +274,20 @@ class VideosController < ApplicationController
   # POST /:username/videos/:id/share_via_email
   def share_via_email
     if @video.channel.private? && !current_user_owns?(@video)
-      render :json => { :error => "This video is in a private channel so it cannot be shared." },
-             :status => :unprocessable_entity
+      render json: { error: "This video is in a private channel so it cannot be shared." },
+             status: :unprocessable_entity
     else
       if params[:recipient_email].blank?
-        render :json => { :error => "You have not specified any email addresses to send this video to" },
-               :status => :unprocessable_entity
+        render json: { error: "You have not specified any email addresses to send this video to" },
+               status: :unprocessable_entity
       else
         shared_errors = @video.share_via_email(current_user, params[:recipient_email], params[:personal_message])
         if shared_errors.blank?
-          render :json => { :message => "We have shared this video via email for you!" },
-                 :status => :ok
+          render json: { message: "We have shared this video via email for you!" },
+                 status: :ok
         else
-          render :json => { :error => shared_errors },
-                 :status => :unprocessable_entity
+          render json: { error: shared_errors },
+                 status: :unprocessable_entity
         end
       end
     end
@@ -305,28 +305,28 @@ class VideosController < ApplicationController
   # PUT /:username/videos/:video_id/successful_upload
   def successful_upload
     if params[:video_id].blank?
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "ERROR: Error SAVING new video info for #{current_user.email} during upload.  REASON: video_id was blank.") if Rails.env.production?
-      render :json => { :error => "There was an error saving your new video.  We have been notified of this issue." },
-             :status => :unprocessable_entity
+      Airbrake.notify(error_class: "Logged Error", error_message: "ERROR: Error SAVING new video info for #{current_user.email} during upload.  REASON: video_id was blank.") if Rails.env.production?
+      render json: { error: "There was an error saving your new video.  We have been notified of this issue." },
+             status: :unprocessable_entity
     else
       new_video = current_user.videos.find_by_id(params[:video_id])
       # Check the video exists
       if new_video
         # send back response
-        render :json => { :success_message => "Video uploaded! Go explore while we finish it up!",
-                          :edit_video_path => edit_user_video_path(current_user, new_video) },
-               :status => :accepted
+        render json: { success_message: "Video uploaded! Go explore while we finish it up!",
+                          edit_video_path: edit_user_video_path(current_user, new_video) },
+               status: :accepted
 
         # Change the VideoGraph to a submitting state
         # Kick off the Zencoder encoding as a delayed job
         new_video_graph = new_video.video_graph
         new_video_graph.set_status(VideoGraph::SUBMITTING)
         new_video_graph.save
-        new_video_graph.delay(:priority => 0).encode
+        new_video_graph.delay(priority: 0).encode
       else
-        Airbrake.notify(:error_class => "Logged Error", :error_message => "ERROR: Error SAVING new video info for #{current_user.email} during upload.  REASON: The video id passed in was not found within the current_user's videos. Maybe they tried modifying someone else's video by changing the form params?") if Rails.env.production?
-        render :json => { :error => "There was an error saving your video. The parameters did not match up with what was expected.  We have been notified of this issue." },
-               :status => :unprocessable_entity
+        Airbrake.notify(error_class: "Logged Error", error_message: "ERROR: Error SAVING new video info for #{current_user.email} during upload.  REASON: The video id passed in was not found within the current_user's videos. Maybe they tried modifying someone else's video by changing the form params?") if Rails.env.production?
+        render json: { error: "There was an error saving your video. The parameters did not match up with what was expected.  We have been notified of this issue." },
+               status: :unprocessable_entity
       end
     end
   end
@@ -346,20 +346,20 @@ class VideosController < ApplicationController
 
         if params[:redirect].blank?
           # new video form
-          render :json => { :channel_select => render_to_string( :partial => 'videos/channel_options.html',
-                                                                 :locals => { :@video => @video } ) },
-                 :status => :accepted
+          render json: { channel_select: render_to_string( partial: 'videos/channel_options.html',
+                                                                 locals: { @video: @video } ) },
+                 status: :accepted
         else
           # update video form
           redirect_to(user_video_path(current_user, @video))
         end
       else
-        render :json => { :error => get_errors_for_class(@video) },
-               :status => :unprocessable_entity
+        render json: { error: get_errors_for_class(@video) },
+               status: :unprocessable_entity
       end
     else
-      render :json => { :error => "That video could not be found" },
-             :status => :not_found
+      render json: { error: "That video could not be found" },
+             status: :not_found
     end
   end
 
@@ -373,11 +373,11 @@ class VideosController < ApplicationController
       vg.error_message = detailed_error_msg
       vg.save
       # save the error for QA tracking and analytics
-      vg.video_errors.create(:user_id => vg.user_id, :error_status => vg.status, :error_message => detailed_error_msg)
+      vg.video_errors.create(user_id: vg.user_id, error_status: vg.status, error_message: detailed_error_msg)
 
-      Airbrake.notify(:error_class => "Logged Error", :error_message => "UPLOAD ERROR: User #{vg.user_id} just had an uploading error... #{detailed_error_msg}") if Rails.env.production?
+      Airbrake.notify(error_class: "Logged Error", error_message: "UPLOAD ERROR: User #{vg.user_id} just had an uploading error... #{detailed_error_msg}") if Rails.env.production?
     end
-    render :nothing => true, :status => :accepted
+    render nothing: true, status: :accepted
   end
 
   private
@@ -387,15 +387,15 @@ class VideosController < ApplicationController
 
       begin
         if current_user?(@user)
-          @video ||= @user.videos.where(:id => video_id).joins(:video_graph).where(:video_graphs => { :status => Video.statuses_to_show_to_current_user }).first
+          @video ||= @user.videos.where(id: video_id).joins(:video_graph).where(video_graphs: { status: Video.statuses_to_show_to_current_user }).first
         else
-          @video ||= @user.videos.where(:id => video_id).joins(:video_graph).where(:video_graphs => { :status => VideoGraph.get_status_number(:ready) }).first
+          @video ||= @user.videos.where(:id => video_id).joins(:video_graph).where(video_graphs: { status: VideoGraph.get_status_number(:ready) }).first
         end
       rescue ActiveRecord::StatementInvalid
         @video = nil
       end
 
-      render(:template => "errors/error_404", :status => 404) if @video.blank?
+      render(template: "errors/error_404", status: 404) if @video.blank?
     end
 
 end

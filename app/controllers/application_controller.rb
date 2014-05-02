@@ -49,20 +49,20 @@ class ApplicationController < ActionController::Base
   # Sets instance variables for @user based on params
   def set_user
     @user ||= User.find_by_username(params[:username])
-    render(:template => "errors/error_404", :status => 404) if @user.blank?
+    render(template: "errors/error_404", status: 404) if @user.blank?
   end
 
   # Sets instance variables for @video based on params
   def set_video
     @video ||= @user.videos.find_by_id(params[:video_id])
-    render(:template => "errors/error_404", :status => 404) if (@video.blank? || !@video.is_status?(VideoGraph::READY))
+    render(template: "errors/error_404", status: 404) if (@video.blank? || !@video.is_status?(VideoGraph::READY))
   end
 
   # Sets a channel based on the params (if it exists)
   def set_channel
     channel_id = params[:channel_id] || params[:id]
     @channel ||= @user.channels.find_by_id(channel_id)
-    render(:template => "errors/error_404", :status => 404) if @channel.blank?
+    render(template: "errors/error_404", status: 404) if @channel.blank?
   end
 
   # Show the 4 latest featured videos for this user
@@ -73,7 +73,7 @@ class ApplicationController < ActionController::Base
   # Verifies that a given user is not blocking the current_user
   def verify_current_user_is_not_blocked
     unless current_user.blank? || current_user?(@user)
-      render(:template => "errors/error_404", :status => 404) if Blocking.where(:requesting_user => @user.id, :blocked_user => current_user.id).exists?
+      render(template: "errors/error_404", status: 404) if Blocking.where(requesting_user: @user.id, blocked_user: current_user.id).exists?
     end
   end
 
@@ -81,9 +81,9 @@ class ApplicationController < ActionController::Base
   def verify_user_can_access_channel
     unless user_can_access_channel
       if (params[:controller] == "channels" && params[:action] == "show")
-        render(:template => "errors/private_channel", :status => 404)
+        render(template: "errors/private_channel", status: 404)
       else
-        render(:template => "errors/error_404", :status => 404)
+        render(template: "errors/error_404", status: 404)
       end
     end
   end
@@ -93,7 +93,7 @@ class ApplicationController < ActionController::Base
     public_token = params[:channel_token]
     user_can_access_either_one = (public_token and public_token.strip == @video.channel.public_token) || user_can_access_channel
 
-    render(:template => "errors/error_404", :status => 404) unless user_can_access_either_one
+    render(template: "errors/error_404", status: 404) unless user_can_access_either_one
   end
 
   # Helper for auth verifications
@@ -104,17 +104,17 @@ class ApplicationController < ActionController::Base
 
   # Verifies the user owns the channel
   def verify_user_owns_channel
-    render(:template => "errors/error_404", :status => 404) unless current_user_owns?(@channel)
+    render(template: "errors/error_404", status: 404) unless current_user_owns?(@channel)
   end
 
   # Verifies the user owns the page
   def verify_user_owns_page
-    render(:template => "errors/error_404", :status => 404) unless current_user?(@user)
+    render(template: "errors/error_404", status: 404) unless current_user?(@user)
   end
 
   # Verifies the user owns the video
   def verify_user_owns_video
-    render(:template => "errors/error_404", :status => 404) unless current_user_owns?(@video)
+    render(template: "errors/error_404", status: 404) unless current_user_owns?(@video)
   end
 
   # Redirects the user to their subscription stream if they are logged in
@@ -136,7 +136,7 @@ class ApplicationController < ActionController::Base
       unless current_user.nil?
         if current_user.is_deactivated
           sign_out
-          render(:template => "errors/error_deactivated", :status => 401)
+          render(template: "errors/error_deactivated", status: 401)
         end
       end
     end
@@ -146,7 +146,7 @@ class ApplicationController < ActionController::Base
     # one of the supported browsers.
     def check_for_modern_browser
       if browser.ie6? || browser.ie7?
-        render(:template => "errors/error_old_browser", :status => 401)
+        render(template: "errors/error_old_browser", status: 401)
       end
     end
 end

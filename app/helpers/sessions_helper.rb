@@ -9,7 +9,7 @@ module SessionsHelper
   # prior to letting them access a certain page
   def deny_access
     store_location
-    redirect_to :login, :notice => "Please login to access that page."
+    redirect_to :login, notice: "Please login to access that page."
   end
 
   # Sets the current_user object and optionally creates a Remember Me cookie

@@ -1,15 +1,15 @@
 class Icon < ActiveRecord::Base
   # validates these attribute conditions are met
-  validates :icon_type, :presence => true
-  validates :name,      :presence => true
-  validates :active,    :inclusion => { :in => [true, false] }
+  validates :icon_type, presence: true
+  validates :name,      presence: true
+  validates :active,    inclusion: { in: [true, false] }
 
-  scope :active, where(:active => true)
+  scope :active, where(active: true)
   scope :order_by_name, order(:name)
-  scope :badges, where(:icon_type => "badge")
+  scope :badges, where(icon_type: "badge")
 
-  has_many :badges, :dependent => :destroy,
-                    :foreign_key => 'badge_type'
+  has_many :badges, dependent: :destroy,
+                    foreign_key: 'badge_type'
 
   # Returns the "type" of icon based on primary key
   def badge_type

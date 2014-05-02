@@ -5,24 +5,24 @@ class Channel < ActiveRecord::Base
 
   # Validations
   before_validation :strip_title
-  before_validation :generate_public_token, :on => :create
-  validates :title,   :presence => { :message => "^Please name your channel" },
-                      :length => { :maximum => 30, :message => "^Channel name is too long (maximum of 30 characters)" }
-  validates_uniqueness_of :title, :scope => [:user_id],
-                                  :case_sensitive => false,
-                                  :message => "^You already have a channel with that name"
-  validate :featured_channel_stays_public, :user_cant_change_featured_channel_title, :on => :update
-  validates_presence_of :public_token, :unless => :featured
+  before_validation :generate_public_token, on: :create
+  validates :title,   presence: { message: "^Please name your channel" },
+                      length: { maximum: 30, message: "^Channel name is too long (maximum of 30 characters)" }
+  validates_uniqueness_of :title, scope: [:user_id],
+                                  case_sensitive: false,
+                                  message: "^You already have a channel with that name"
+  validate :featured_channel_stays_public, :user_cant_change_featured_channel_title, on: :update
+  validates_presence_of :public_token, unless: :featured
 
   belongs_to :user
-  has_many :videos, :dependent => :destroy, :order => 'created_at DESC'
-  has_many :subscribers, :foreign_key => "channel_id",
-                         :class_name => "Subscription",
-                         :dependent => :destroy
-  has_many :subscribers_as_people, :through => :subscribers, :source => :subscriber_people, :order => 'UPPER(name) ASC'
+  has_many :videos, dependent: :destroy, order: 'created_at DESC'
+  has_many :subscribers, foreign_key: "channel_id",
+                         class_name: "Subscription",
+                         dependent: :destroy
+  has_many :subscribers_as_people, through: :subscribers, source: :subscriber_people, order: 'UPPER(name) ASC'
 
   # User requests to access private channels
-  has_many :channel_requests, :dependent => :destroy
+  has_many :channel_requests, dependent: :destroy
 
 
   ################
@@ -42,7 +42,7 @@ class Channel < ActiveRecord::Base
 
   # Returns 9 videos that have a :ready status
   def videos_for_preview
-    self.videos.joins(:video_graph).where(:video_graphs => { :status => VideoGraph.get_status_number(:ready) }).limit(9)
+    self.videos.joins(:video_graph).where(video_graphs: { status: VideoGraph.get_status_number(:ready) }).limit(9)
   end
 
 
@@ -55,7 +55,7 @@ class Channel < ActiveRecord::Base
     return true if !self.private?
 
     unless current_user.blank?
-      return false if Blocking.where(:requesting_user => self.user_id, :blocked_user => current_user.id).exists?
+      return false if Blocking.where(requesting_user: self.user_id, blocked_user: current_user.id).exists?
       return true if self.user_id == current_user.id
       return true if current_user.is_subscribed_to?(self)
     end
@@ -71,7 +71,7 @@ class Channel < ActiveRecord::Base
   def regenerate_public_token
     loop do
       new_token = SecureRandom.base64(50).tr('+/=', 'xyz').first(50)
-      break self.public_token = new_token unless Channel.where(:public_token => new_token).exists?
+      break self.public_token = new_token unless Channel.where(public_token: new_token).exists?
     end
   end
 
@@ -83,11 +83,11 @@ class Channel < ActiveRecord::Base
   def subscribe!(current_user, request_approved = false)
     subscription ||= current_user.subscriptions.new
     subscription.errors.add(:id, "^You cannot subscribe to your own channel.") and return subscription if self.user_id == current_user.id
-    subscription.errors.add(:channel_id, "^You are already subscribed to this channel.") and return subscription if Subscription.where(:subscriber_id => current_user.id, :channel_id => self.id).exists?
+    subscription.errors.add(:channel_id, "^You are already subscribed to this channel.") and return subscription if Subscription.where(subscriber_id: current_user.id, channel_id: self.id).exists?
 
     channel_owner = User.find_by_id(self.user_id)
     if self.private? && request_approved == false
-      if ChannelRequest.where(:user_id => current_user.id, :channel_id => self.id).exists?
+      if ChannelRequest.where(user_id: current_user.id, channel_id: self.id).exists?
          subscription.errors.add(:channel_id, "^You have already requested access to this channel.  Please be patient while this person responds to the request.")
       else
         # Add channel request
@@ -101,10 +101,10 @@ class Channel < ActiveRecord::Base
         UserMailer.delay.request_channel_approval(current_user, self, channel_request) if channel_owner.send_email_for_private_channel_request
 
         # Add event to activity feed
-        UserEvent.delay(:priority => 40).create(:event_type => UserEvent.event_type_value(:channel_request),
-                                                :event_object_id => channel_request.id,
-                                                :user_id => self.user_id,
-                                                :event_creator_id => current_user.id)
+        UserEvent.delay(priority: 40).create(event_type: UserEvent.event_type_value(:channel_request),
+                                                event_object_id: channel_request.id,
+                                                user_id: self.user_id,
+                                                event_creator_id: current_user.id)
       end
     else
       subscription.subscriber_id = current_user.id
@@ -120,17 +120,17 @@ class Channel < ActiveRecord::Base
       UserMailer.delay.new_subscriber(channel_owner, current_user, self) if channel_owner.send_email_for_new_subscriber && !request_approved
 
       # Add event to activity feed
-      UserEvent.delay(:priority => 40).create(:event_type => UserEvent.event_type_value(:subscription),
-                                              :event_object_id => subscription.id,
-                                              :user_id => self.user_id,
-                                              :event_creator_id => current_user.id)
+      UserEvent.delay(priority: 40).create(event_type: UserEvent.event_type_value(:subscription),
+                                              event_object_id: subscription.id,
+                                              user_id: self.user_id,
+                                              event_creator_id: current_user.id)
     end
 
     return subscription
   end
 
   def unsubscribe!(current_user)
-    subscription ||=  current_user.subscriptions.where(:channel_id => self.id).first
+    subscription ||=  current_user.subscriptions.where(channel_id: self.id).first
     if subscription.blank?
       return false
     else

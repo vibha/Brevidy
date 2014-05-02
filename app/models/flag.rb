@@ -2,7 +2,7 @@ class Flag < ActiveRecord::Base
   # Defines which attributes can be mass-assigned via a form POST (be careful here)
   attr_accessible :reason
 
-  validates :reason, :presence => true
+  validates :reason, presence: true
 end
 
 
