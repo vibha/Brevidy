@@ -1,5 +1,5 @@
 module UserEventsHelper
-  def render_content_for_event(event)    
+  def render_content_for_event(event)
     event_class ||= event.get_event_class_type
     event_objects ||= event.get_event_objects(event_class[0])
 
@@ -14,5 +14,5 @@ module UserEventsHelper
                           :video => event_objects[2],
                           :seen_by_user => event.seen_by_user }
     end
-  end    
+  end
 end

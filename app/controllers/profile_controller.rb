@@ -15,7 +15,7 @@ class ProfileController < ApplicationController
     profile = current_user.profile
 
     if params[:profile].blank?
-      render :json => { :error => "There was no profile data passed in so your profile could not be saved." }, 
+      render :json => { :error => "There was no profile data passed in so your profile could not be saved." },
              :status => :unprocessable_entity
     else
       if profile.update_attributes(params[:profile])
@@ -23,7 +23,7 @@ class ProfileController < ApplicationController
                           :text => profile.categories_to_hash('text') },
                :status => :accepted
       else
-        render :json => { :error => get_errors_for_class(profile).to_sentence }, 
+        render :json => { :error => get_errors_for_class(profile).to_sentence },
                :status => :unprocessable_entity
       end
     end

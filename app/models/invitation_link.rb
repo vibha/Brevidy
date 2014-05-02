@@ -4,14 +4,14 @@ class InvitationLink < ActiveRecord::Base
 
   # Lifecycle actions
   after_create :set_invitation_defaults
-  
+
   # Constants
     # sets whether we should invite people immediately or not (might help signups)
     WE_SHOULD_INVITE_THEM_IMMEDIATELY = true
-  
+
   # Model relationships
   belongs_to :user
-  
+
   # Validations for beta signups
   before_validation :generate_token, :on => :create
   validate :recipient_has_not_already_been_invited, :on => :create, :if => :email_asking_for_invite
@@ -25,10 +25,10 @@ class InvitationLink < ActiveRecord::Base
         invitation = InvitationLink.where(:token => invitation_token).first
         invitation.increment_click_count! if invitation
       end
-      
+
       return invitation
     end
-    
+
     # Handles inviting new users
     def invite_new_users!(recipient_emails, invite_owner, personal_message)
       invite_errors = []
@@ -56,7 +56,7 @@ class InvitationLink < ActiveRecord::Base
               if invite_owner.blank?
                 # a new person is signing up for beta
                 @invitation_link = InvitationLink.new(:email_asking_for_invite => recipient_email)
-              
+
                 if !@invitation_link.save
                   invite_errors << @invitation_link.errors.full_messages
                 end
@@ -83,13 +83,13 @@ class InvitationLink < ActiveRecord::Base
       return invite_errors.flatten unless invite_errors.empty?
     end
   end
-  
+
   # increments the clicked count for invite analytics tracking
   # to show how many times the invitation link was clicked or navigated to
   def increment_click_count!
     self.increment! :click_count
   end
-  
+
   private
     # Validation checks
     # beta signups
@@ -98,7 +98,7 @@ class InvitationLink < ActiveRecord::Base
       email = email_asking_for_invite.strip.downcase
       errors.add(:email_asking_for_invite, "^#{email_asking_for_invite} has already been added to the invitation list") if InvitationLink.where(:email_asking_for_invite => email).exists?
     end
-    
+
     class << self
       # Validates an email address
       def this_is_a_valid_email?(email)

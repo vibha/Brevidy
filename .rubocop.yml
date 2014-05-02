@@ -1,0 +1,51 @@
+# Base RuboCop configuration
+# Shared between normal and strict mode.
+#
+#AllCops:
+#  Excludes:
+#    - db/schema.rb
+#    - bin/*
+#    - vendor/bundle/*
+
+# Enforce outdenting of access modifiers (i.e. public, private, protected)
+AccessModifierIndentation:
+  EnforcedStyle: outdent
+
+CollectionMethods:
+  Enabled: true
+
+# Disable top-level class documentation checking
+Documentation:
+  Enabled: false
+
+EmptyLinesAroundBody:
+  Enabled: false
+
+EmptyLineBetweenDefs:
+  Enabled: true
+  AllowAdjacentOneLineDefs: true
+
+# Can use %
+FavorSprintf:
+  Enabled: false
+
+# Enforce new Ruby 1.9 hash syntax
+HashSyntax:
+  EnforcedStyle: ruby19
+
+# Do not enforce new lambda litteral syntax for single line body
+Lambda:
+  Enabled: false
+
+# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SupportedStyles.
+SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
+
+# Offence count: 5
+# Cop supports --auto-correct.
+# Configuration parameters: EnforcedStyle, SupportedStyles.
+SignalException:
+  Enabled: true
+
+SingleLineMethods:
+  Enabled: false

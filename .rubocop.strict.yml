@@ -1,0 +1,7 @@
+# This config file enable Cops which are not enabled by default.
+#
+# This is mainly used for guidelines which are recommended but not enforced.
+inherit_from: .rubocop.base.yml
+
+LineLength:
+  Max: 120

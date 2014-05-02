@@ -82,4 +82,6 @@ group :development, :test do
   gem 'launchy'
   # wipes the db after each run instead of using transactional fixtures
   gem 'database_cleaner'
+  # out of the box it will enforce many of the guidelines outlined in the community Ruby Style Guide
+  gem 'rubocop'
 end

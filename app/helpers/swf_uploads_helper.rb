@@ -36,30 +36,30 @@ module SwfUploadsHelper
 
     # Generate a policy based on the above
     @policy = swf_generated_policy
-    
+
     # Generate a signature based on the policy
     @signature = swf_generated_signature(@policy)
-    
+
     # Return the javascript given all of the above
     return swfupload_uploader_javascript
   end
-  
+
   private
     # Returns the proper S3 bucket based on the Rails environment
     def swf_bucket
       return Brevidy::Application::S3_BUCKET
     end
-  
+
     # Returns the proper S3 access key based on the Rails environment
     def swf_access_key
       return Brevidy::Application::S3_ACCESS_KEY_ID
     end
-  
+
     # Returns the proper S3 secret access key based on the Rails environment
     def swf_secret_access_key
       return Brevidy::Application::S3_SECRET_ACCESS_KEY
     end
-  
+
     # Returns a generated S3 policy which places restrictions and sets configs
     # for all uploads
     def swf_generated_policy
@@ -75,7 +75,7 @@ module SwfUploadsHelper
                                         ]
                                       }").gsub(/\n|\r/, '')
     end
-  
+
     # Returns a generated S3 signature based on the secret key and policy
     def swf_generated_signature(policy)
       return signature = Base64.encode64(
@@ -83,21 +83,21 @@ module SwfUploadsHelper
                              OpenSSL::Digest::Digest.new('sha1'),
                                swf_secret_access_key, policy)).gsub("\n","")
     end
-  
+
     # Returns a string of javascript for instantiating a SWFUpload uploader object
     def swfupload_uploader_javascript(options = {})
       uploader_js = ""
       uploader_js << javascript_include_tag("uploader/swfupload.and.speed.min")
       uploader_js << javascript_tag("
-        $(function() { 
+        $(function() {
           var new_video = #{@media_type == 'video'};
           var percent_uploaded = 0;
-          
+
           var swf_uploader = new SWFUpload({
           	// SWF Settings
           	flash_url: '/javascripts/uploader/swfupload.swf',
           	prevent_swf_caching: false,
-	
+
 	          // Button Settings
           	button_action: SWFUpload.BUTTON_ACTION.SELECT_FILE,
           	button_image_url: '#{cache_buster_path("/javascripts/uploader/select_#{@media_type}_v1.png")}',
@@ -106,7 +106,7 @@ module SwfUploadsHelper
           	button_height: 28,
           	button_window_mode: 'transparent',
           	button_cursor: SWFUpload.CURSOR.HAND,
-          	
+
           	// S3 settings
           	upload_url: '#{@s3_base_url.gsub('https://', 'http://')}',
           	file_post_name: 'file',
@@ -116,14 +116,14 @@ module SwfUploadsHelper
           			'acl': '#{@acl}',
           			'Content-Type': '#{@content_type}',
           			'success_action_status': '201',
-          			'AWSAccessKeyId': '#{swf_access_key}',		
+          			'AWSAccessKeyId': '#{swf_access_key}',
           			'policy': '#{@policy}',
           			'signature': '#{@signature}'
                },
 
           	// File settings
           	file_size_limit: '#{@max_filesize / 1048576} MB',
-          	file_types: '#{@swf_filter_extensions}',			
+          	file_types: '#{@swf_filter_extensions}',
           	file_types_description: '#{@filter_title}',
           	file_upload_limit: 1,
           	file_queue_limit: 1,
@@ -140,29 +140,29 @@ module SwfUploadsHelper
           	// Debug settings
           	debug: #{Rails.env.development?}
           });
-          
+
           function fileDialogComplete() { swf_uploader.startUpload(); }
-          
+
           function uploadStart(file) {
             // Move the uploader browse button off screen
-            $('.uploader-area').css({'position':'relative','top':'-9999999px','height':'0'});   
+            $('.uploader-area').css({'position':'relative','top':'-9999999px','height':'0'});
             swf_uploader.setButtonDisabled(true);
-            
+
             $('#progress-bar span').show();
-            $('#progress-bar').show('fast', function () { 
+            $('#progress-bar').show('fast', function () {
               $('#new-video-form').slideDown('fast');
-            });  
-            
+            });
+
             // warn user if they are still uploading to not leave the page
             window.onbeforeunload = function() {
               return 'You are currently uploading a file.  Are you sure you want to leave this page and cancel the upload?';
             };
           }
-          
+
           function uploadSuccess(file, serverData) {
             $('#progress-bar .progress').css('width', '100%');
             $('#progress-bar span').text('Processing...');
-            
+
             if (new_video) {
               var ajax_data = { };
               $('#new-video-form').submit();
@@ -170,7 +170,7 @@ module SwfUploadsHelper
               var ajax_data = { 'media_type':'#{@media_type}',
         				                'filename':'#{@temporary_filename}' };
             }
-            
+
             $.ajax({
       				data: ajax_data,
       				type: 'PUT',
@@ -178,13 +178,13 @@ module SwfUploadsHelper
       				success: function(json) {
       				  // Update progress bar
                 $('#progress-bar span').text(json.success_message);
-      				  
+
       				  // Start polling for image uploads
-      				  if (new_video) { 
+      				  if (new_video) {
       				    $('.success-message.video-saved p').html('Video information saved. You can edit it by <a href=\"'+ json.edit_video_path +'\">clicking here</a>');
       				  } else {
       				    // Start polling for image uploads
-      				    simple_poll_request(); 
+      				    simple_poll_request();
       				  }
       				},
       				error: function(response) {
@@ -199,9 +199,9 @@ module SwfUploadsHelper
             // clear out the user warning
             window.onbeforeunload = null;
           }
-          
+
           var progressSpeed = 0;
-          function uploadProgress(file, bytesLoaded, bytesTotal) {    
+          function uploadProgress(file, bytesLoaded, bytesTotal) {
           	if (bytesTotal) {
           		percent_uploaded = (bytesLoaded / bytesTotal) * 100;
           		$('#progress-bar .progress').css('width', percent_uploaded + '%');
@@ -233,7 +233,7 @@ module SwfUploadsHelper
           	brevidy.dialog('Error', error_message, 'error');
           	return;
           }
-          
+
           function uploadError(file, errorCode, message) {
             if (errorCode == SWFUpload.UPLOAD_ERROR.FILE_CANCELLED) { return; }
           	switch (errorCode) {
@@ -264,11 +264,11 @@ module SwfUploadsHelper
           	}
           	// Show the user an error box
           	brevidy.dialog('Error', 'There was an error during the upload: ' + error_message, 'error');
-          	
+
           	// Show failure on progress bar
             $('#progress-bar .progress').addClass('error').css('width', '100%');
             $('#progress-bar span').text('Upload Failed :(');
-            
+
             // Send off error to the server
             if (new_video) {
               $.ajax({
@@ -281,16 +281,16 @@ module SwfUploadsHelper
                 url: '#{@video_upload_error_path}'
               });
             }
-                
+
             // hide the meta area
             $('#new-video-form').slideUp('fast');
-                
+
             // clear out the user warning
             window.onbeforeunload = null;
           }
       });")
     end
- 
+
     # Generates a random string for a temporary image upload (prior to processing the image)
     def filename_for_image_upload
       random_token = Digest::SHA2.hexdigest("#{Time.now.utc}--#{current_user.id.to_s}").first(15)

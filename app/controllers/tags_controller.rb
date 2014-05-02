@@ -5,13 +5,13 @@ class TagsController < ApplicationController
   def destroy
     tagging ||= @video.taggings.where(:tag_id => params[:id]).first
     if tagging
-      # tagging relationship exists, so destroy it 
+      # tagging relationship exists, so destroy it
       if tagging.destroy
         render :json => { :video_id => @video.id,
                           :tags_count => @video.tags.count },
                :status => :ok
       else
-        render :json => { :error => "There was an error removing your tag." }, 
+        render :json => { :error => "There was an error removing your tag." },
                :status => :unprocessable_entity
       end
     else

@@ -1,47 +1,47 @@
 class UserEvent < ActiveRecord::Base
   # Validations
   validates :event_type, :event_object_id, :user_id, :event_creator_id, :presence => true
-  
+
   # Returns model and event types for a given event
   def get_event_class_type
     case self.event_type
       when UserEvent.event_type_value(:badge)
         model_name = Badge
-        event_type = 'badge'   
+        event_type = 'badge'
       when UserEvent.event_type_value(:comment)
         model_name = Comment
-        event_type = 'comment'   
+        event_type = 'comment'
       when UserEvent.event_type_value(:comment_response)
         model_name = Comment
         event_type = 'comment_response'
       when UserEvent.event_type_value(:subscription)
         model_name = Subscription
-        event_type = 'subscription'        
+        event_type = 'subscription'
       when UserEvent.event_type_value(:channel_request)
         model_name = ChannelRequest
-        event_type = 'channel_request'        
+        event_type = 'channel_request'
       else
         false
     end
-    
+
     return [model_name, event_type]
   end
-  
+
   # Instantiates objects based on model type and the object ids
   def get_event_objects(model_name)
     begin
       events_not_associated_with_videos = [UserEvent.event_type_value(:subscription), UserEvent.event_type_value(:channel_request)]
       associated_with_video = !events_not_associated_with_videos.include?(self.event_type)
       model_object = model_name.find(self.event_object_id)
-      if associated_with_video 
+      if associated_with_video
         video_id = model_object.video_id
         video = Video.find(video_id)
       else
         video = nil
       end
-      
+
       # returns User who created event, Object for event, and Video for event if necessary
-      return [User.find_by_id(self.event_creator_id), model_object, video]  
+      return [User.find_by_id(self.event_creator_id), model_object, video]
     rescue
       # If there was an error, set the error flag for the UserEvent object
       # and return nil so we don't display that event to the user
@@ -49,7 +49,7 @@ class UserEvent < ActiveRecord::Base
       return nil
     end
   end
-  
+
   class << self
     # Returns an integer for a event type
     # Latest # is 8
@@ -73,12 +73,8 @@ class UserEvent < ActiveRecord::Base
       end
     end
   end # end self class
-    
+
 end
-
-
-
-
 
 
 # == Schema Information

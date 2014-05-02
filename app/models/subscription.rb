@@ -1,17 +1,17 @@
 class Subscription < ActiveRecord::Base
   attr_protected :publisher_id, :subscriber_id, :channel_id
-  
+
   belongs_to :channel
   # Used for associations in other models
   belongs_to :channels_subscribed_to, :foreign_key => "channel_id", :class_name => "Channel"
   belongs_to :subscriber_people, :foreign_key => "subscriber_id", :class_name => "User"
-  
+
   # validations
   validates :publisher_id, :presence => true
   validates :subscriber_id, :presence => true
   validates :channel_id, :presence => true
   validates_uniqueness_of :channel_id, :scope => :subscriber_id
-  
+
   # Lifecycle actions
   after_create :destroy_channel_request
 

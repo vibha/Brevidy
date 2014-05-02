@@ -1,18 +1,18 @@
-class Badge < ActiveRecord::Base  
+class Badge < ActiveRecord::Base
   # Defines which attributes can be mass-assigned via a form POST (be careful here)
   attr_accessible :badge_type
-  
+
   # validates these attribute conditions are met
   validates :video_id,    :presence => { :message => "^There was no video ID passed in" }
   validates :badge_type,    :presence => { :message => "^There was no badge type passed in" }
   validates :badge_from,  :presence => { :message => "^There was no person passed in for who the badge is from" }
-  
+
   # Active Record relationships
   belongs_to :video
   belongs_to :icon
 
   scope :most_recent, limit(50)
-  
+
   # Returns the proper name for a given badge type
   def name
     Icon.find_by_id(self.badge_type).name
@@ -31,7 +31,7 @@ class Badge < ActiveRecord::Base
       Badge.where(:badge_type => badge_type).count
     end
   end
-    
+
 end
 
 

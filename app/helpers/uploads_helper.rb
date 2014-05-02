@@ -35,36 +35,36 @@ module UploadsHelper
 
     # Generate a policy based on the above
     policy = generated_policy(expiration_date, bucket, acl, max_filesize, s3_file_key)
-    
+
     # Generate a signature based on the policy
     signature = generated_signature(policy)
-    
+
     # Return the javascript given all of the above
     return uploader_javascript(:media_type => media_type, :max_filesize => max_filesize, :acl => acl,
-                               :s3_file_key => s3_file_key, :policy => policy, :signature => signature, 
+                               :s3_file_key => s3_file_key, :policy => policy, :signature => signature,
                                :s3_base_url => s3_base_url, :content_type => content_type,
                                :filter_title => filter_title, :filter_extensions => filter_extensions,
-                               :temporary_filename => temporary_filename, :base_filename => base_filename, 
+                               :temporary_filename => temporary_filename, :base_filename => base_filename,
                                :success_response_path => success_response_path, :image_status_path => image_status_path,
                                :video_upload_error_path => video_upload_error_path)
   end
-  
+
   private
     # Returns the proper S3 bucket based on the Rails environment
     def bucket
       return Brevidy::Application::S3_BUCKET
     end
-  
+
     # Returns the proper S3 access key based on the Rails environment
     def access_key
       return Brevidy::Application::S3_ACCESS_KEY_ID
     end
-  
+
     # Returns the proper S3 secret access key based on the Rails environment
     def secret_access_key
       return Brevidy::Application::S3_SECRET_ACCESS_KEY
     end
-  
+
     # Returns a generated S3 policy which places restrictions and sets configs
     # for all uploads
     def generated_policy(expiration_date, bucket, acl, max_filesize, s3_file_key)
@@ -81,7 +81,7 @@ module UploadsHelper
                                         ]
                                       }").gsub(/\n|\r/, '')
     end
-  
+
     # Returns a generated S3 signature based on the secret key and policy
     def generated_signature(policy)
       return signature = Base64.encode64(
@@ -89,18 +89,18 @@ module UploadsHelper
                              OpenSSL::Digest::Digest.new('sha1'),
                                secret_access_key, policy)).gsub("\n","")
     end
-  
+
     # Returns a string of javascript for instantiating an uploader
     def uploader_javascript(options = {})
       uploader_js = ""
-      uploader_js << javascript_include_tag("plupload/plupload.full") 
+      uploader_js << javascript_include_tag("plupload/plupload.full")
       uploader_js << javascript_tag("
-        $(function() { 
+        $(function() {
           var plupload_max_file_size = '#{options[:max_filesize] / 1048576} MB';
           var new_video = #{options[:media_type] == 'video'};
           var video_id = 0;
           var uploader_dom_id;
-          
+
           var uploader = new plupload.Uploader({
               runtimes : 'flash',
               browse_button : 'select-#{options[:media_type]}',
@@ -112,23 +112,23 @@ module UploadsHelper
                 // Called as soon as a file has been added and prior to upload
                 FilesAdded: function(up, files) {
                   uploader_dom_id = up.id + '_' + up.runtime + '_container';
-                  
+
                   // Start the uploader
                   uploader.start();
-                  
+
                   // hide the add files button and show progress bar
                   $('#select-#{options[:media_type]}').fadeOut('fast', function() {
                     $(this).remove();
                   });
                   $('#progress-bar span').show();
-                  $('#progress-bar').show('fast', function () { 
+                  $('#progress-bar').show('fast', function () {
                     $('#new-video-form').slideDown('fast');
                   });
-                  
+
                   plupload.each(files, function(file) {
                     if (up.files.length > 1) { up.removeFile(file); }
                   });
-      
+
                   // warn user if they are still uploading to not leave the page
                   window.onbeforeunload = function() {
                     return 'You are currently uploading a file.  Are you sure you want to leave this page and cancel the upload?';
@@ -137,7 +137,7 @@ module UploadsHelper
                 },
                 FileUploaded: function(up, file, info) {
                   $('#progress-bar .progress').css('width', '100%');
-                  
+
                   if (new_video) {
                     var ajax_data = { };
                     $('#new-video-form').submit();
@@ -145,7 +145,7 @@ module UploadsHelper
                     var ajax_data = { 'media_type':'#{options[:media_type]}',
               				                'filename':'#{options[:temporary_filename]}' };
                   }
-                  
+
                   $.ajax({
             				data: ajax_data,
             				type: 'PUT',
@@ -153,32 +153,32 @@ module UploadsHelper
             				success: function(json) {
             				  // Update progress bar
                       $('#progress-bar span').text(json.success_message);
-            				  
+
             				  // Start polling for image uploads
-            				  if (new_video) { 
+            				  if (new_video) {
             				    $('.success-message.video-saved p').html('Video information saved. You can edit it by <a href=\"'+ json.edit_video_path +'\">clicking here</a>');
             				  } else {
             				    // Start polling for image uploads
-            				    simple_poll_request(); 
+            				    simple_poll_request();
             				  }
             				},
             				error: function(response) {
             				  // show failure on progress bar
                       $('#progress-bar .progress').addClass('error').css('width', '100%');
                       $('#progress-bar span').text('Upload Failed :(');
-    
+
                       brevidy.dialog('Error', 'There was an error uploading your file.  Please e-mail us at support@brevidy.com if this continues to happen.', 'error');
             				}
             			});
-			
+
                   // clear out the user warning
                   window.onbeforeunload = null;
-      
+
                 },
                 UploadProgress: function(up, file) {
                   // Move the uploader browse button off screen
                   $('#' + uploader_dom_id).css('top', '-9999999px');
-      
+
                   // Binds progress to progress bar
                   if(file.percent < 100){
                     $('#progress-bar .progress').css('width', file.percent+'%');
@@ -186,11 +186,11 @@ module UploadsHelper
                   } else {
                     $('#progress-bar .progress').css('width', '100%');
                     $('#progress-bar span').text('Processing... please wait');
-                  }                          
+                  }
                 },
-                Error: function(up, error) {      
+                Error: function(up, error) {
                   var error_message;
-      
+
                   // shows error object
                   if (error.message.indexOf('File size') !== -1) {
                     brevidy.dialog('Error', 'The file you chose was too large (it cannot be larger than ' + plupload_max_file_size + ').  Please resize the file or choose a different one to upload.', 'error');
@@ -198,10 +198,10 @@ module UploadsHelper
                     // show failure on progress bar
                     $('#progress-bar .progress').addClass('error').css('width', '100%');
                     $('#progress-bar span').text('Upload Failed :(');
-        
+
                     error_message = error.message;
                     brevidy.dialog('Error', 'There was an error uploading your file: ' + error_message + ' Please e-mail us at support@brevidy.com if this continues to happen.', 'error');
-                  
+
                     if (new_video) {
                       $.ajax({
                         data: { 'error_message':error_message },
@@ -209,15 +209,15 @@ module UploadsHelper
                         url: '#{options[:video_upload_error_path]}'
                       });
                     }
-                    
+
                   }
-                
+
                   // hide the meta area
                   $('#new-video-form').slideUp('fast');
-                      
+
                   // clear out the user warning
                   window.onbeforeunload = null;
-      
+
                 }
               },
               multi_selection: false,
@@ -228,7 +228,7 @@ module UploadsHelper
           			'acl': '#{options[:acl]}',
           			'Content-Type': '#{options[:content_type]}',
           			'success_action_status': '201',
-          			'AWSAccessKeyId' : '#{access_key}',		
+          			'AWSAccessKeyId' : '#{access_key}',
           			'policy': '#{options[:policy]}',
           			'signature': '#{options[:signature]}'
                },
@@ -261,7 +261,7 @@ module UploadsHelper
 
       });")
     end
-  
+
     # Generates a random string for a temporary image upload (prior to processing the image)
     def filename_for_image_upload
       random_token = Digest::SHA2.hexdigest("#{Time.now.utc}--#{current_user.id.to_s}").first(15)

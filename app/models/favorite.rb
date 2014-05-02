@@ -3,21 +3,21 @@ class Favorite < ActiveRecord::Base
   attr_accessible :video_id
 
   # validates these attribute conditions are met
-  validates :user_id,   
+  validates :user_id,
     :presence => { :message => "^There was no user ID passed in so we were unable to save this to your favorites" },
-    :uniqueness => { :scope => :video_id, 
+    :uniqueness => { :scope => :video_id,
                      :message => "^You have already favorited that video"}
-                     
-  validates :video_id,  
+
+  validates :video_id,
     :presence => { :message => "^There was no video ID passed in so we were unable to save this to your favorites" }
-  
+
   validates :video_owner_id,
     :presence => { :message => "^There was no video owner ID passed in so we were unable to save this to your favorites." }
-         
-  # Active Record Relationships                           
+
+  # Active Record Relationships
   belongs_to :user
   belongs_to :video
-  
+
 end
 
 
